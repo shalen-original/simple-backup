@@ -3,6 +3,7 @@ import logging
 
 from pathlib import Path
 from datetime import datetime
+import yaml
 from app.command_line_args import parse_args
 
 def main():
@@ -28,7 +29,17 @@ def main():
 
     profile_path = Path(args.profile_directory, args.profile + ".yml")
     logger.info("Loading profile from file: %s", profile_path.absolute().as_posix())
+    profile = {}
 
+    try:
+        profile = yaml.load(profile_path.read_text())
+    except FileNotFoundError:
+        logger.error("Unable to load profile file. The file does not exists.")
+        logger.error("Aborting backup")
+        return
+
+
+    print(profile)
 
 def configure_logger(profile):
     """Configures the root logger"""
