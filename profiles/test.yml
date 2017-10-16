@@ -1,0 +1,14 @@
+# Test
+
+global:
+  tmp-directory: "D:/Test/TMP"
+
+outputs:
+  zip:
+    directory: "D:/Test"
+
+inputs:
+  filesystem:
+    paths:
+      - "D:/Test/Dir1"
+      - "D:/Test/Dir2"
