@@ -3,6 +3,9 @@ import logging
 
 from pathlib import Path
 from datetime import datetime
+from importlib import import_module
+from shutil import rmtree
+import os
 import yaml
 from app.command_line_args import parse_args
 
@@ -27,6 +30,7 @@ def main():
     logger.info(separator)
     logger.info("Starting a backup with profile '%s'", args.profile)
 
+    # Loading backup profile
     profile_path = Path(args.profile_directory, args.profile + ".yml")
     logger.info("Loading profile from file: %s", profile_path.absolute().as_posix())
     profile = {}
@@ -38,8 +42,47 @@ def main():
         logger.error("Aborting backup")
         return
 
+    # Creating TMP directory
+    tmp_dir = profile['global']['tmp-directory']
+    p_tmp_dir = Path(tmp_dir)
 
-    print(profile)
+    try:
+        os.makedirs(p_tmp_dir)
+    except FileExistsError:
+        # Directory already exists. Checking if empty
+        if os.listdir(p_tmp_dir):
+            # Directory not empty. Error and abort
+            logger.error(f"The tmp directory '{tmp_dir}' already"
+                         + " exists and is not empty. Aborting backup")
+            return
+
+
+    # Running inputs
+    mappings = {}
+    for input_name in profile['inputs']:
+        logger.info(f"Running input '{input_name}'")
+        inp = import_module(f"app.inputs.{input_name}")
+        mappings[input_name] = inp.backup(profile['inputs'][input_name], tmp_dir)
+        logger.info(f"Input '{input_name}' done")
+
+    # Writing mappings to file
+    with open(Path(tmp_dir, "mappings.yml"), 'w+') as fout:
+        print(yaml.dump(mappings), file=fout)
+
+    # Running outputs
+    for output_name in profile['outputs']:
+        logger.info(f"Running output '{output_name}'")
+        out = import_module(f"app.outputs.{output_name}")
+        mappings[output_name] = out.backup(profile['outputs'][output_name], tmp_dir, args.profile)
+        logger.info(f"Output '{output_name}' done")
+
+    # Deleting tmp folder
+    logger.info("Removing tmp directory")
+    rmtree(p_tmp_dir)
+
+    logger.info("Backup DONE.")
+
+    #print(profile)
 
 def configure_logger(profile):
     """Configures the root logger"""

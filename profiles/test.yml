@@ -12,3 +12,4 @@ inputs:
     paths:
       - "D:/Test/Dir1"
       - "D:/Test/Dir2"
+      - "D:/Test/file5.txt"
