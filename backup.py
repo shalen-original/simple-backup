@@ -69,6 +69,17 @@ def main():
     with open(Path(tmp_dir, "mappings.yml"), 'w+') as fout:
         print(yaml.dump(mappings), file=fout)
 
+    # Running verifications
+    for input_name in profile['inputs']:
+        logger.info(f"Running verification for input '{input_name}'")
+        inp = import_module(f"app.inputs.{input_name}")
+        valid = inp.verify(profile['inputs'][input_name], mappings[input_name], tmp_dir)
+        if valid:
+            logger.info(f"Input verification for input '{input_name}' done")
+        else:
+            logger.error(f"Input verification for input '{input_name}' failed. Aborting backup.")
+            return
+
     # Running outputs
     for output_name in profile['outputs']:
         logger.info(f"Running output '{output_name}'")
@@ -81,8 +92,6 @@ def main():
     rmtree(p_tmp_dir)
 
     logger.info("Backup DONE.")
-
-    #print(profile)
 
 def configure_logger(profile):
     """Configures the root logger"""
