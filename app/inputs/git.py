@@ -62,11 +62,14 @@ def verify(git_cfg, mappings, tmp_dir):
         for git_repo in subdirectories:
             logger.info("Verifying bundle '%s'",
                         copied.joinpath(git_repo.resolve().stem + ".bundle").as_posix())
-            curr_repo = Repo(git_repo.resolve().as_posix())
-            git = curr_repo.git
             try:
-                git.bundle("verify",
-                           copied.joinpath(git_repo.resolve().stem + ".bundle").as_posix())
+                curr_repo = Repo(git_repo.resolve().as_posix())
+                git = curr_repo.git
+                bundle_path = Path(copied.joinpath(git_repo.resolve().stem + ".bundle"))
+                git.bundle("verify", bundle_path.as_posix())
+            except InvalidGitRepositoryError:
+                # This means that before a warning has been logged
+                pass
             except GitCommandError:
                 logger.error("It is not a valid bundle")
                 return False
