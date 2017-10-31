@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from app.errors.BackupError import BackupError
 from git import Repo
+from git.exc import InvalidGitRepositoryError, GitCommandError
 
 def backup(git_cfg, tmp_dir):
     """ Does the backup with the configuration contained in yaml_cfg """
@@ -21,6 +22,7 @@ def backup(git_cfg, tmp_dir):
         dest = Path(tmp_dir, folder)
 
         mappings[path] = folder
+        os.makedirs(dest)
 
         logger.info("Backing up all repositories in folder '%s' (mapped to '%s')",
                     path, dest.resolve().as_posix())
@@ -32,12 +34,14 @@ def backup(git_cfg, tmp_dir):
 
         for git_repo in subdirectories:
             logger.info("Bundling repository '%s'", git_repo.resolve().as_posix())
-            os.makedirs(dest)
 
-            curr_repo = Repo(git_repo.resolve().as_posix())
-            git = curr_repo.git
-            git.bundle("create",
-                       dest.joinpath(git_repo.resolve().stem + ".bundle").as_posix(), "--all")
+            try:
+                curr_repo = Repo(git_repo.resolve().as_posix())
+                git = curr_repo.git
+                git.bundle("create",
+                           dest.joinpath(git_repo.resolve().stem + ".bundle").as_posix(), "--all")
+            except InvalidGitRepositoryError:
+                logger.warning("This is not a valid git repository, skipping.")
 
     return mappings
 
@@ -63,7 +67,7 @@ def verify(git_cfg, mappings, tmp_dir):
             try:
                 git.bundle("verify",
                            copied.joinpath(git_repo.resolve().stem + ".bundle").as_posix())
-            except git.exc.GitCommandError:
+            except GitCommandError:
                 logger.error("It is not a valid bundle")
                 return False
 
