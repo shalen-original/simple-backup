@@ -8,6 +8,9 @@ outputs:
     directory: "D:/Test"
 
 inputs:
+  git:
+    paths:
+      - "D:/Test/git"
   filesystem:
     paths:
       - "D:/Test/Dir1"
