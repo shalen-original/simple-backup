@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime
 from importlib import import_module
 from shutil import rmtree
+import stat
 import os
 import yaml
 from app.command_line_args import parse_args
@@ -89,9 +90,13 @@ def main():
 
     # Deleting tmp folder
     logger.info("Removing tmp directory")
-    rmtree(p_tmp_dir)
-
+    rmtree(p_tmp_dir, onerror=del_rw)
     logger.info("Backup DONE.")
+
+def del_rw(action, name, exc):
+    """ Removes the readonly flag from a file and deletes it. Useful for shutil.rmtree """
+    os.chmod(name, stat.S_IWRITE)
+    os.remove(name)
 
 def configure_logger(profile):
     """Configures the root logger"""
