@@ -1,0 +1,7 @@
+logs/*.log
+
+profiles
+!profiles/example.yml
+
+*.pyc
+*.swp
